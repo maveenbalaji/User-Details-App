@@ -31,9 +31,12 @@ firebase_core & cloud_firestore: Firebase packages integrated into the app for m
 How It Works
 
 Input User Details: Users enter their name, age, state, and occupation through the app interface.
+![Screenshot (53)](https://github.com/user-attachments/assets/2c15242b-908e-4867-a0e5-31f666680b79)
 
 Upload to Firebase: The app uploads the data to a Firebase Firestore database.
 
 Update Data: Users can edit their details, and the app is designed to update the existing data in Firebase.
 
 Real-time Sync: Firebase syncs data in real time, reflecting changes instantly in the database (though an issue currently exists with data not updating properly).
+![Screenshot (55)](https://github.com/user-attachments/assets/66a233f4-6f85-444d-b505-3c6509dc667b)
+
