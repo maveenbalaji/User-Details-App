@@ -1,14 +1,11 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:local_auth/local_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Initialize Firebase
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -16,111 +13,85 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: FingerprintAuthScreen(),
+      title: 'Firestore Example',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: MyHomePage(),
     );
   }
 }
 
-class FingerprintAuthScreen extends StatefulWidget {
+class MyHomePage extends StatefulWidget {
   @override
-  _FingerprintAuthScreenState createState() => _FingerprintAuthScreenState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _FingerprintAuthScreenState extends State<FingerprintAuthScreen> {
-  final LocalAuthentication auth = LocalAuthentication();
-  String _authorized = 'Not Authorized';
-  bool _isAuthenticating = false;
+class _MyHomePageState extends State<MyHomePage> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _stateController = TextEditingController();
+  final TextEditingController _occupationController = TextEditingController();
+  final Uuid uuid = Uuid();
 
-  Future<void> _authenticate() async {
-    bool authenticated = false;
+  Future<void> _addUser() async {
     try {
-      setState(() {
-        _isAuthenticating = true;
-        _authorized = 'Authenticating';
+      String name = _nameController.text;
+      int age = int.parse(_ageController.text);
+      String state = _stateController.text;
+      String occupation = _occupationController.text;
+      String uniqueCode = uuid.v4(); // Generate a unique code
+
+      await FirebaseFirestore.instance.collection('users').add({
+        'name': name,
+        'age': age,
+        'state': state,
+        'occupation': occupation,
+        'uniqueCode': uniqueCode,
       });
 
-      authenticated = await auth.authenticate(
-        localizedReason: 'Scan your fingerprint to authenticate',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: true,
-        ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('User added successfully')),
       );
-
-      setState(() {
-        _isAuthenticating = false;
-        _authorized = authenticated ? 'Authorized' : 'Not Authorized';
-      });
-
-      if (authenticated) {
-        // Generate a unique hash
-        String hash = generateFingerprintHash();
-
-        // Store the hash in Firebase Firestore
-        await storeHashInFirestore(hash);
-      }
-    } on PlatformException catch (e) {
-      print(e);
-      setState(() {
-        _isAuthenticating = false;
-        _authorized = 'Error - ${e.message}';
-      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add user: $e')),
+      );
     }
-  }
-
-  String generateFingerprintHash() {
-    // Here, we are simulating a fingerprint data
-    // In a real scenario, use actual fingerprint data
-    String fingerprintData = "SampleFingerprintData";
-    var bytes = utf8.encode(fingerprintData); // Convert data to bytes
-    var digest = sha256.convert(bytes); // Generate SHA-256 hash
-    return digest.toString(); // Return hash as a string
-  }
-
-  Future<void> storeHashInFirestore(String hash) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    await firestore.collection('fingerprint_hashes').add({
-      'hash': hash,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Fingerprint Authentication'),
+        title: Text('Firestore Example'),
       ),
-      body: Center(
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Current State: $_authorized\n'),
-            if (_isAuthenticating)
-              ElevatedButton(
-                onPressed: () async {
-                  await auth.stopAuthentication();
-                  setState(() => _isAuthenticating = false);
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Cancel Authentication'),
-                    Icon(Icons.cancel),
-                  ],
-                ),
-              )
-            else
-              ElevatedButton(
-                onPressed: _authenticate,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Authenticate with Fingerprint'),
-                    Icon(Icons.fingerprint),
-                  ],
-                ),
-              ),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(labelText: 'Name'),
+            ),
+            TextField(
+              controller: _ageController,
+              decoration: InputDecoration(labelText: 'Age'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _stateController,
+              decoration: InputDecoration(labelText: 'State'),
+            ),
+            TextField(
+              controller: _occupationController,
+              decoration: InputDecoration(labelText: 'Occupation'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _addUser,
+              child: Text('Add User'),
+            ),
           ],
         ),
       ),
