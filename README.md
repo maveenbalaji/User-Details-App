@@ -29,7 +29,7 @@ The User Details App is a Flutter application designed to allow users to input t
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/user-details-app.git
+   git clone https://github.com/maveenbalaji/User-Details-App.git
    ```
 
 2. Navigate to the project directory:
